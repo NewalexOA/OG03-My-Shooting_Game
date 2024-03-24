@@ -48,7 +48,6 @@ score_y = 10
 running = True
 
 while running:
-    # Fill the background / Заполнение фона
     screen.fill(color)
 
     for event in pygame.event.get():
@@ -56,7 +55,6 @@ while running:
             running = False
         if event.type == pygame.MOUSEBUTTONDOWN:
             mouse_x, mouse_y = pygame.mouse.get_pos()
-            # Check if target is hit / Проверка попадания по цели
             if target_x <= mouse_x <= target_x + target_width and target_y <= mouse_y <= target_y + target_height:
                 target_x = random.randint(0, SCREEN_WIDTH - target_width)
                 target_y = random.randint(score_panel_height, SCREEN_HEIGHT - target_height)
@@ -69,7 +67,11 @@ while running:
     score_text = score_font.render(f"Score: {score}", True, score_color)
     screen.blit(score_text, (score_x, score_y))
 
-    # Update the display / Обновление отображения
+    # Display the highscore, aligned to the right / Отображение рекорда, выравнивание справа
+    highscore_text = score_font.render(f"High Score: {highscore}", True, score_color)
+    highscore_x = SCREEN_WIDTH - highscore_text.get_width() - 10  # Align to the right / Выравнивание справа
+    screen.blit(highscore_text, (highscore_x, score_y))
+
     pygame.display.update()
 
 # Save highscore if score is greater / Сохранение рекорда, если текущий счет больше
