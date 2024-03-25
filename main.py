@@ -38,7 +38,7 @@ highscore = 0
 speed_highscore = 0.0  # Highscore for hits per minute / Рекорд по количеству попаданий в минуту
 start_time = time.time()  # Start time of the game / Время начала игры
 
-# Attempt to read highscore and speed highscore from file / Попытка прочитать рекорд и рекорд скорости из файла
+# Attempt to read hit highscore and speed highscore from file / Попытка прочитать рекорд попаданий и рекорд скорости из файла
 try:
     with open("highscore.txt", "r") as f:
         scores = f.readline().split()
@@ -50,17 +50,54 @@ except FileNotFoundError:
 
 # Fonts / Шрифты
 result_font = pygame.font.Font(None, 24)  # Font for all result panel text / Шрифт для всего текста на панели результатов
+timer_font = pygame.font.Font(None, 76)  # Font for the countdown timer / Шрифт для таймера обратного отсчёта
+final_result_font = pygame.font.Font(None, 32)  # Font for final result display / Шрифт для отображения итоговых результатов
 score_color = (0, 0, 0)
 
 # Vertical position for score display / Вертикальное положение для отображения счета
 score_y = 10
 
 running = True
+game_duration = 10  # Game duration in seconds / Продолжительность игры в секундах
 
 while running:
     screen.fill(color)
-    current_time = time.time()  # Current time for calculating hit speed / Текущее время для расчета скорости попаданий
-    total_time = (current_time - start_time) / 60  # Total time in minutes / Общее время в минутах
+    current_time = time.time()
+    elapsed_time = current_time - start_time
+
+    # Check if the game duration is over / Проверка, не закончилась ли игра
+    if elapsed_time >= game_duration:
+        screen.fill((255, 247, 153))  # Pale yellow background for final result display / Бледно-желтый фон для отображения итоговых результатов
+
+        hits_per_minute = hits / (elapsed_time / 60) if elapsed_time > 0 else 0
+        speed_text = final_result_font.render(f"Your speed: {hits_per_minute:.2f} hits/min", True, (0, 0, 0))
+        hits_text = final_result_font.render(f"Hits count: {hits}", True, (0, 0, 0))
+
+        speed_text_rect = speed_text.get_rect(center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 20))
+        hits_text_rect = hits_text.get_rect(center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 20))
+
+        screen.blit(speed_text, speed_text_rect)
+        screen.blit(hits_text, hits_text_rect)
+
+        pygame.display.update()
+
+        time.sleep(5)  # Display results for 5 seconds / Отображение результатов 5 секунд
+        running = False
+        continue
+
+    # Timer display / Отображение таймера
+    remaining_time = int(game_duration - elapsed_time)
+    timer_text = timer_font.render(f"{remaining_time}", True, (255, 0, 0))
+    timer_text_rect = timer_text.get_rect(center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2))
+    screen.blit(timer_text, timer_text_rect.topleft)  # Рисуем текст напрямую на экран
+
+
+    # Create a semi-transparent surface for the timer text / Создание полупрозрачной поверхности для текста таймера
+    timer_surface = pygame.Surface((timer_text_rect.width, timer_text_rect.height))
+    timer_surface.set_alpha(0)  # Set semi-transparency / Установка полупрозрачности
+    timer_surface.blit(timer_text, (0, 0))  # Drawing text on the surface / Рисование текста на поверхности
+
+    screen.blit(timer_surface, timer_text_rect.topleft)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -70,8 +107,8 @@ while running:
             if target_x <= mouse_x <= target_x + target_width and target_y <= mouse_y <= target_y + target_height:
                 target_x = random.randint(0, SCREEN_WIDTH - target_width)
                 target_y = random.randint(score_panel_height, SCREEN_HEIGHT - target_height)
-                score += 1  # Increase score on hit / Увеличение счета при попадании
-                hits += 1  # Increment hits / Увеличение количества попаданий
+                score += 1
+                hits += 1
 
     # Display the target / Отображение цели
     screen.blit(target_image, (target_x, target_y))
@@ -80,21 +117,11 @@ while running:
     score_text = result_font.render(f"Score: {score}", True, score_color)
     screen.blit(score_text, (10, score_y))
 
-    # Calculate and display speed highscore / Расчет и отображение рекорда скорости попаданий в минуту
-    speed_highscore_text = result_font.render(f"Speed High Score: {speed_highscore:.2f}", True, score_color)
-    speed_highscore_x = SCREEN_WIDTH / 2 - speed_highscore_text.get_width() / 2  # Center the speed highscore text / Центрирование текста рекорда скорости
-    screen.blit(speed_highscore_text, (speed_highscore_x, score_y))
-
-    # Display the highscore / Отображение рекорда
-    highscore_text = result_font.render(f"High Score: {highscore}", True, score_color)
-    highscore_text_x = SCREEN_WIDTH - highscore_text.get_width() - 10  # Right align the highscore text / Выравнивание текста рекорда по правому краю
-    screen.blit(highscore_text, (highscore_text_x, score_y))
-
     pygame.display.update()
 
-# Update and save highscore and speed highscore regardless of score being greater / Обновление и сохранение рекорда и рекорда скорости независимо от того, превышен ли счет
+# Update and save highscore and speed highscore if necessary / Обновление и сохранение рекорда и скоростного рекорда при необходимости
 if score > highscore or hits_per_minute > speed_highscore:
     with open("highscore.txt", "w") as f:
-        f.write(f"{max(score, highscore)} {speed_highscore:.2f}")
+        f.write(f"{max(score, highscore)} {max(hits_per_minute, speed_highscore):.2f}")
 
 pygame.quit()
